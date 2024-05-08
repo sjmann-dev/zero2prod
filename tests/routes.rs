@@ -1,6 +1,7 @@
 use reqwest::StatusCode;
+use sqlx::{Connection, PgConnection};
 use std::net::TcpListener;
-use zero2prod::startup;
+use zero2prod::{configuration::get_configuration, startup};
 
 // `tokio::test` is the testing equivalent of `tokio::main`.
 // It also spares you from having to specify the `#[test]` attribute.
@@ -25,6 +26,13 @@ async fn health_check_works() {
 #[tokio::test]
 async fn subscribe_returns_200_for_valid_form_data() {
     let app_address = spawn_app();
+    let config = get_configuration().expect("Failed to load configuration");
+    let connection_string = config.database.connection_string();
+
+    let mut connection = PgConnection::connect(&connection_string)
+        .await
+        .expect("Failed to connect to Postgres");
+
     let client = reqwest::Client::new();
 
     let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
@@ -36,7 +44,14 @@ async fn subscribe_returns_200_for_valid_form_data() {
         .await
         .expect("Faield to execute request");
 
-    assert_eq!(StatusCode::OK, response.status())
+    let saved = sqlx::query!("SELECT email, name FROM subscriptions")
+        .fetch_one(&mut connection)
+        .await
+        .expect("Failed to get result from database");
+
+    assert_eq!(StatusCode::OK, response.status());
+    assert_eq!(saved.email, "ursula_le_guin@mail.com");
+    assert_eq!(saved.name, "le guin");
 }
 
 #[tokio::test]
