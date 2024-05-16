@@ -16,21 +16,22 @@ jobs:
       postgres:
         image: postgres:14
         env:
-          POSTGRES_USER: ds
-          POSTGRES_PASSWORD: pw
-          POSTGRES_DB: pg
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: newsletter
         ports:
           - 5432:5432
     steps:
       - uses: actions/checkout@v4
         with:
           key: sqlx-${{ env.SQLX_VERSION }}
-          run:
-            cargo install sqlx-cli
-            --version=${{ env.SQLX_VERSION }}
-            --features ${{ env.SQLX_FEATURES }}
-            --no-default-features
-            --locked
+      - name: Install SQLX CLI
+        run:
+          cargo install sqlx-cli
+          --version=${{ env.SQLX_VERSION }}
+          --features ${{ env.SQLX_FEATURES }}
+          --no-default-features
+          --locked
       - name: Migrate database
         run: |
           sudo apt-get install libpq-dev -y
