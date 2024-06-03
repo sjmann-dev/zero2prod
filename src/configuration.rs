@@ -20,6 +20,13 @@ impl DatabaseSettings {
             self.username, self.password, self.host, self.db_port, self.db_name
         )
     }
+
+    pub fn connection_string_without_db_name(&self) -> String {
+        format!(
+            "postgres://{}:{}@{}:{}",
+            self.username, self.password, self.host, self.db_port
+        )
+    }
 }
 
 pub fn get_configuration() -> Result<Settings, config::ConfigError> {
